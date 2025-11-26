@@ -136,3 +136,26 @@
     opacity: 0.9;
   }
 }
+
+/* --- MOBILE PATCH --- */
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr; /* Stack content */
+    padding: 2rem 1rem;
+    gap: 2rem;
+  }
+
+  .title {
+    font-size: 2rem; /* Shrink title */
+  }
+
+  .previewImage {
+    height: 250px; /* Smaller image */
+  }
+
+  /* Move the Sidebar (Checkout) to the bottom */
+  .sidebar {
+    position: relative;
+    top: 0;
+  }
+}

@@ -127,3 +127,16 @@
     margin-left: 5px;
   }
 }
+
+/* --- MOBILE PATCH --- */
+@media (max-width: 768px) {
+  .authCard {
+    width: 95%; /* Make it fit the screen width */
+    padding: 1.5rem; /* Less internal padding */
+    margin-top: -50px; /* Pull it up a bit visually */
+  }
+
+  .title {
+    font-size: 1.8rem; /* Smaller title */
+  }
+}
