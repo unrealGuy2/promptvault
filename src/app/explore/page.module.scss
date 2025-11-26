@@ -1,0 +1,90 @@
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 280px 1fr; /* Sidebar width | Content width */
+  gap: 3rem;
+  align-items: start;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  position: sticky;
+  top: 100px; /* Sticks below navbar */
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  height: fit-content;
+}
+
+.filterGroup {
+  margin-bottom: 2rem;
+  
+  h3 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    font-family: var(--font-mono);
+  }
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.8rem;
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 0.95rem;
+
+  &:hover {
+    color: var(--accent-cyan);
+  }
+
+  input {
+    accent-color: var(--accent-cyan);
+    transform: scale(1.2);
+  }
+}
+
+/* Main Content Area */
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.searchBar {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  
+  /* The input field itself */
+  input {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    width: 100%;
+    outline: none;
+    font-family: var(--font-mono);
+
+    &::placeholder {
+      color: #555;
+    }
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}

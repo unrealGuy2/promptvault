@@ -1,0 +1,108 @@
+:root {
+  /* Color Palette - The "Terminal" Look */
+  --bg-deep: #050507;       /* Almost pure black */
+  --bg-card: #0f0f12;       /* Slightly lighter for cards */
+  --text-main: #e0e0e0;     /* Soft white */
+  --text-muted: #888888;    /* Grey for secondary text */
+  
+  --accent-cyan: #00f3ff;   /* Neon Cyan */
+  --accent-purple: #bc13fe; /* Neon Purple */
+  
+  /* Glass Effect Variables */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shine: rgba(255, 255, 255, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* --- Reusable Utility Classes --- */
+
+/* The Glass Container */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+/* Hover Effect for Glass Cards */
+.glass-panel:hover {
+  border-color: var(--glass-shine);
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); /* Subtle cyan glow */
+  transform: translateY(-2px);
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(45deg, var(--accent-purple), var(--accent-cyan));
+  border: none;
+  padding: 10px 20px;
+  color: #000;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: monospace; /* Developer feel */
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+/* Helper to make text glow */
+.glow-text {
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+/* --- MOBILE SAFETY PATCH --- */
+@media (max-width: 768px) {
+  
+  /* 1. Make the Navbar stack vertically */
+  nav {
+    flex-direction: column;
+    height: auto !important;
+    padding: 1rem !important;
+    gap: 1rem;
+  }
+  
+  /* 2. Hide the middle links on small phones (to save space) */
+  nav div:nth-child(2) { 
+    display: none; 
+  }
+
+  /* 3. Shrink the Huge Hero Text */
+  h1 {
+    font-size: 2.5rem !important; /* Down from 4rem */
+  }
+
+  /* 4. Adjust Padding for containers */
+  main {
+    padding: 1rem !important;
+  }
+  
+  /* 5. Fix the Prompt Detail Page layout */
+  div[class*="content"] {
+    grid-template-columns: 1fr !important; /* Force single column */
+  }
+  
+  aside {
+    position: relative !important;
+    top: 0 !important;
+  }
+}

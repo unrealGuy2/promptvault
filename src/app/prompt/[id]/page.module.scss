@@ -1,0 +1,138 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* Left side big, right side small */
+  gap: 4rem;
+  align-items: start;
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.tags {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.tag {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--accent-cyan);
+}
+
+.previewImage {
+  width: 100%;
+  height: 400px;
+  background: #111;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  font-family: var(--font-mono);
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--text-main);
+  border-left: 3px solid var(--accent-purple);
+  padding-left: 1rem;
+}
+
+.description {
+  line-height: 1.8;
+  color: var(--text-muted);
+  margin-bottom: 3rem;
+  font-size: 1.1rem;
+}
+
+/* The Code Block with the "Blur" effect */
+.promptBox {
+  background: #000;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  font-family: var(--font-mono);
+  position: relative;
+  overflow: hidden;
+  color: var(--text-muted);
+}
+
+.blurOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(8px); /* This hides the prompt */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  
+  p {
+    background: black;
+    padding: 10px 20px;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+    color: white;
+    font-weight: bold;
+  }
+}
+
+/* Right Sidebar (Checkout Card) */
+.sidebar {
+  position: sticky;
+  top: 100px;
+}
+
+.checkoutCard {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 2rem;
+  border-radius: 12px;
+  
+  .price {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+  }
+  
+  .sub {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    display: block;
+  }
+}
+
+.buyBtn {
+  width: 100%;
+  padding: 15px;
+  background: var(--accent-cyan);
+  color: black;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
