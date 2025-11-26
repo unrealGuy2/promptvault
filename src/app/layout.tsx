@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.scss";
-import Navbar from "../components/Navbar"; // Importing our new Navbar
+import Navbar from "../components/Navbar"; 
+import { Analytics } from "@vercel/analytics/react"; // <--- ADDED THIS IMPORT
 
 const inter = Inter({ subsets: ["latin"] });
 // We use JetBrains Mono for that "Coder" vibe in headers/tags
@@ -27,6 +28,9 @@ export default function RootLayout({
         <div style={{ paddingTop: '70px' }}>
           {children}
         </div>
+
+        {/* This is the invisible tracker for Vercel */}
+        <Analytics /> 
       </body>
     </html>
   );
