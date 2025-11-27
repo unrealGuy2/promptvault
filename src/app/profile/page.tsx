@@ -1,22 +1,23 @@
 "use client";
 import { useEffect, useState } from "react";
-// Swapped Edit3/Loader2 for standard icons to prevent version errors
-import { MapPin, Link as LinkIcon, Edit, Loader } from "lucide-react"; 
+import { MapPin, Link as LinkIcon, Edit, Loader, Settings } from "lucide-react"; 
 import styles from "./page.module.scss";
 import PromptCard from "../../components/PromptCard";
 import { supabase } from "../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const router = useRouter();
   
-  // We use <any> to ignore strict TypeScript warnings for now
   const [user, setUser] = useState<any>(null);
+  const [profileData, setProfileData] = useState<any>(null); // New state for Bio/Role
   const [prompts, setPrompts] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const getData = async () => {
+      // 1. Get Current Logged In User
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -25,6 +26,18 @@ export default function ProfilePage() {
       }
       setUser(user);
 
+      // 2. Fetch Profile Details (Bio, Username, Role)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile) {
+        setProfileData(profile);
+      }
+
+      // 3. Fetch Prompts uploaded by this user
       const { data: userPrompts, error } = await supabase
         .from('prompts')
         .select('*')
@@ -54,23 +67,50 @@ export default function ProfilePage() {
       {/* HEADER */}
       <section className={styles.header}>
         <div className={styles.avatar}>
-          {/* Safety check: if email is missing, show 'U' */}
-          {user?.email?.charAt(0).toUpperCase() || "U"}
+          {/* Use Username first letter, or Email first letter as fallback */}
+          {profileData?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
         </div>
 
         <div className={styles.info}>
           <div className={styles.nameRow}>
-            {/* Show username or email part */}
-            <h1>{user?.user_metadata?.username || user?.email?.split('@')[0]}</h1>
-            <button className={styles.editBtn}>
-                <Edit size={14} style={{ marginRight: '5px' }}/> 
-                Edit Profile
-            </button>
+            {/* Display Real Username from DB */}
+            <h1>{profileData?.username || "Unnamed Engineer"}</h1>
+            
+            {/* Link to Onboarding to edit profile */}
+            <Link href="/onboarding" style={{ textDecoration: 'none' }}>
+                <button className={styles.editBtn} style={{ display: 'flex', alignItems: 'center' }}>
+                    <Settings size={14} style={{ marginRight: '5px' }}/> 
+                    Edit Profile
+                </button>
+            </Link>
           </div>
 
-          <p className={styles.bio}>
-            Prompt Engineer & Automation Enthusiast.
-          </p>
+          <div className={styles.bio}>
+            {/* Display Real Bio */}
+            {profileData?.bio ? (
+                <p>{profileData.bio}</p>
+            ) : (
+                <p style={{ color: '#666', fontStyle: 'italic' }}>
+                    No bio set yet. Click 'Edit Profile' to introduce yourself.
+                </p>
+            )}
+            
+            {/* Show Role Badge */}
+            {profileData?.role && (
+                <span style={{ 
+                    fontSize: '0.75rem', 
+                    background: 'rgba(255,255,255,0.1)', 
+                    padding: '4px 8px', 
+                    borderRadius: '4px',
+                    marginTop: '10px',
+                    display: 'inline-block',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px'
+                }}>
+                    {profileData.role}
+                </span>
+            )}
+          </div>
           
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', fontSize: '0.9rem', color: '#888' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><MapPin size={14}/> Earth</span>
@@ -105,19 +145,24 @@ export default function ProfilePage() {
         {prompts.length === 0 ? (
             <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
                 You haven't deployed any prompts yet. <br />
-                <a href="/sell" style={{ color: 'var(--accent-cyan)' }}>Start Selling &rarr;</a>
+                {profileData?.role === 'engineer' ? (
+                    <Link href="/sell" style={{ color: 'var(--accent-cyan)' }}>Start Selling &rarr;</Link>
+                ) : (
+                    <span>Switch role to 'Engineer' to start selling.</span>
+                )}
             </div>
         ) : (
             prompts.map((prompt: any) => (
-                <PromptCard 
-                    key={prompt.id}
-                    // SAFETY CHECKS: The || "" prevents errors if DB is empty
-                    tool={prompt.ai_model || "AI Tool"}
-                    title={prompt.title || "Untitled"}
-                    description={prompt.description || "No description"}
-                    author={prompt.author_name || "Me"}
-                    price={prompt.price || "Free"}
-                />
+                // Wrap in div for click handling
+                <div key={prompt.id} onClick={() => window.location.href = `/prompt/${prompt.id}`}>
+                    <PromptCard 
+                        tool={prompt.ai_model || "AI Tool"}
+                        title={prompt.title || "Untitled"}
+                        description={prompt.description || "No description"}
+                        author={profileData?.username || "Me"} // Show current username
+                        price={prompt.price || "Free"}
+                    />
+                </div>
             ))
         )}
       </div>
