@@ -106,3 +106,21 @@ body {
     top: 0 !important;
   }
 }
+
+/* Paystack Button Style */
+.paystack-btn {
+  width: 100%;
+  padding: 15px;
+  background: var(--accent-cyan);
+  color: black;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: opacity 0.2s;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+}
