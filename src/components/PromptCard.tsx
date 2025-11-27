@@ -1,3 +1,4 @@
+"use client"; // <--- THIS WAS MISSING! ADD THIS LINE.
 import Link from 'next/link';
 import styles from './PromptCard.module.scss';
 import { User } from 'lucide-react';
@@ -30,11 +31,10 @@ export default function PromptCard({ title, description, price, tool, author }: 
       
       <div className={styles.footer}>
         {/* MAKE THE AUTHOR CLICKABLE */}
-        {/* e.stopPropagation prevents the card click from firing */}
         <div 
             className={styles.author} 
             onClick={(e) => {
-                e.stopPropagation(); // Don't open the prompt, just go to profile
+                e.stopPropagation(); 
                 window.location.href = `/u/${author}`;
             }}
             style={{ cursor: 'pointer', zIndex: 10 }}
