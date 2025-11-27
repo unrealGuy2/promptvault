@@ -1,15 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
-// Swapped to standard icons to avoid errors
 import { Lock, GitFork, AlertCircle, Loader } from "lucide-react"; 
 import styles from "./page.module.scss";
-// FIX: Added one more "../" to reach the lib folder
 import { supabase } from "../../../lib/supabaseClient"; 
 import { useParams } from "next/navigation";
+// Import the new Comment Section
+import CommentSection from "../../../components/CommentSection";
 
 export default function PromptDetails() {
-  const params = useParams(); // Get the ID from the URL
-  // Use <any> to prevent strict typing errors for now
+  const params = useParams();
   const [prompt, setPrompt] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +19,7 @@ export default function PromptDetails() {
         .from('prompts')
         .select('*')
         .eq('id', params.id)
-        .single(); // .single() means "I expect exactly one result"
+        .single();
 
       if (data) {
         setPrompt(data);
@@ -80,7 +79,7 @@ export default function PromptDetails() {
         <h2 className={styles.sectionTitle}>The Prompt</h2>
         <div className={styles.promptBox}>
           
-          {/* We show a blurred version or just the text "Hidden" */}
+          {/* We show a blurred version */}
           <div style={{ filter: 'blur(5px)', userSelect: 'none', opacity: 0.5 }}>
              {prompt.prompt_content?.substring(0, 50)}... [Content Hidden] ...
           </div>
@@ -90,6 +89,10 @@ export default function PromptDetails() {
             <p>Purchase to Unlock</p>
           </div>
         </div>
+
+        {/* --- NEW: DISCUSSION SECTION --- */}
+        <CommentSection promptId={prompt.id} />
+
       </div>
 
       {/* RIGHT SIDE: Checkout & Actions */}
