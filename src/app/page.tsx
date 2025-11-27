@@ -1,7 +1,32 @@
+"use client"; // <--- THE FIX. Makes this page interactive.
+import { useEffect, useState } from "react";
 import Hero from "../components/Hero";
 import PromptCard from "../components/PromptCard";
+import { supabase } from "../lib/supabaseClient";
+import Link from "next/link"; // Use Link for smoother navigation
 
 export default function Home() {
+  const [trendingPrompts, setTrendingPrompts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTrending = async () => {
+      // Fetch 3 newest prompts for the homepage
+      const { data } = await supabase
+        .from('prompts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (data) {
+        setTrendingPrompts(data);
+      }
+      setLoading(false);
+    };
+
+    fetchTrending();
+  }, []);
+
   return (
     <main>
       <Hero />
@@ -11,36 +36,35 @@ export default function Home() {
         
         {/* Section Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Trending <span style={{ color: 'var(--accent-purple)' }}>Prompts</span></h2>
+          <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Fresh <span style={{ color: 'var(--accent-purple)' }}>Drops</span></h2>
           <a href="/explore" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>View all &rarr;</a>
         </div>
 
         {/* The Grid of Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           
-          <PromptCard 
-            tool="Midjourney v6"
-            title="Cyberpunk Cityscapes - Hyper Realistic"
-            description="Generate stunning 8k cyberpunk environments with consistent lighting and neon aesthetics."
-            author="Fazza"
-            price="$4.99"
-          />
-
-          <PromptCard 
-            tool="GPT-4"
-            title="SEO Blog Post Generator Agent"
-            description="A complex system prompt that acts as an SEO expert, writing human-like articles with proper keywords."
-            author="CodeMaster"
-            price="$9.99"
-          />
-
-          <PromptCard 
-            tool="Stable Diffusion"
-            title="Isometric 3D Icons Pack"
-            description="Create consistent 3D icons for your web designs. Perfect for landing pages and SaaS products."
-            author="DesignBot"
-            price="$2.50"
-          />
+          {loading ? (
+             <p style={{ color: '#666' }}>Loading trending prompts...</p>
+          ) : trendingPrompts.length === 0 ? (
+             <p style={{ color: '#666' }}>No prompts yet. Be the first to upload!</p>
+          ) : (
+            trendingPrompts.map((prompt) => (
+                // We wrap the card in a Link. This is better than onClick.
+                <Link 
+                    key={prompt.id} 
+                    href={`/prompt/${prompt.id}`} 
+                    style={{ textDecoration: 'none' }}
+                >
+                    <PromptCard 
+                        tool={prompt.ai_model || "AI"}
+                        title={prompt.title}
+                        description={prompt.description}
+                        author={prompt.author_name || "Engineer"}
+                        price={prompt.price || "Free"}
+                    />
+                </Link>
+            ))
+          )}
 
         </div>
       </section>
