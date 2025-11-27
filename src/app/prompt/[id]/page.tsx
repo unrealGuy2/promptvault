@@ -1,20 +1,26 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Lock, GitFork, AlertCircle, Loader } from "lucide-react"; 
+import { Lock, GitFork, AlertCircle, Loader, Trash2 } from "lucide-react"; // Added Trash2
 import styles from "./page.module.scss";
 import { supabase } from "../../../lib/supabaseClient"; 
-import { useParams } from "next/navigation";
-// Import the new Comment Section
+import { useParams, useRouter } from "next/navigation"; // Added useRouter
 import CommentSection from "../../../components/CommentSection";
 
 export default function PromptDetails() {
   const params = useParams();
+  const router = useRouter(); // To redirect after delete
+  
   const [prompt, setPrompt] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null); // Track who is looking
 
   useEffect(() => {
-    const getPrompt = async () => {
-      // 1. Fetch the specific prompt by ID
+    const getData = async () => {
+      // 1. Get Current User
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+
+      // 2. Get Prompt
       const { data, error } = await supabase
         .from('prompts')
         .select('*')
@@ -27,10 +33,27 @@ export default function PromptDetails() {
       setLoading(false);
     };
 
-    if (params.id) {
-        getPrompt();
-    }
+    if (params.id) getData();
   }, [params.id]);
+
+  // DELETE FUNCTION
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this prompt? This cannot be undone.");
+    if (!confirmDelete) return;
+
+    // Delete from DB (Comments and Likes will auto-delete because of 'cascade')
+    const { error } = await supabase
+        .from('prompts')
+        .delete()
+        .eq('id', prompt.id);
+
+    if (error) {
+        alert("Error deleting: " + error.message);
+    } else {
+        alert("Prompt deleted.");
+        router.push('/profile'); // Go back to profile
+    }
+  };
 
   if (loading) {
     return (
@@ -50,19 +73,43 @@ export default function PromptDetails() {
     );
   }
 
+  // Check if I am the owner
+  const isOwner = currentUser && currentUser.id === prompt.author_id;
+
   return (
     <main className={styles.container}>
       
-      {/* LEFT SIDE: Content */}
+      {/* LEFT SIDE */}
       <div className={styles.content}>
         <div className={styles.tags}>
           <span className={styles.tag}>{prompt.ai_model || "AI"}</span>
           <span className={styles.tag}>Generative AI</span>
         </div>
 
-        <h1 className={styles.title}>{prompt.title}</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <h1 className={styles.title}>{prompt.title}</h1>
+            
+            {/* ONLY SHOW IF OWNER */}
+            {isOwner && (
+                <button 
+                    onClick={handleDelete}
+                    style={{ 
+                        background: 'rgba(255, 68, 68, 0.1)', 
+                        color: '#ff4444', 
+                        border: '1px solid #ff4444', 
+                        padding: '8px 12px', 
+                        borderRadius: '6px', 
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                    }}
+                >
+                    <Trash2 size={16} /> Delete
+                </button>
+            )}
+        </div>
         
-        {/* Real Image from Database */}
         <div className={styles.previewImage} style={{ 
             backgroundImage: prompt.image_url ? `url(${prompt.image_url})` : 'none',
             backgroundSize: 'cover',
@@ -78,24 +125,19 @@ export default function PromptDetails() {
 
         <h2 className={styles.sectionTitle}>The Prompt</h2>
         <div className={styles.promptBox}>
-          
-          {/* We show a blurred version */}
           <div style={{ filter: 'blur(5px)', userSelect: 'none', opacity: 0.5 }}>
              {prompt.prompt_content?.substring(0, 50)}... [Content Hidden] ...
           </div>
-
           <div className={styles.blurOverlay}>
             <Lock size={32} color="white" />
             <p>Purchase to Unlock</p>
           </div>
         </div>
 
-        {/* --- NEW: DISCUSSION SECTION --- */}
         <CommentSection promptId={prompt.id} />
-
       </div>
 
-      {/* RIGHT SIDE: Checkout & Actions */}
+      {/* RIGHT SIDE */}
       <aside className={styles.sidebar}>
         <div className={styles.checkoutCard}>
           <span className={styles.price}>{prompt.price}</span>
