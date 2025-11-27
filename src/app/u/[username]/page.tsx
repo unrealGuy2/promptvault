@@ -125,6 +125,7 @@ export default function PublicProfile() {
             prompts.map((prompt: any) => (
                 <div key={prompt.id} onClick={() => window.location.href = `/prompt/${prompt.id}`}>
                     <PromptCard 
+                        id={prompt.id} // <--- ADD THIS
                         tool={prompt.ai_model || "AI Tool"}
                         title={prompt.title || "Untitled"}
                         description={prompt.description || "No description"}

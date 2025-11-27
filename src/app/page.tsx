@@ -56,6 +56,7 @@ export default function Home() {
                     style={{ textDecoration: 'none' }}
                 >
                     <PromptCard 
+                        id={prompt.id} // <--- ADD THIS
                         tool={prompt.ai_model || "AI"}
                         title={prompt.title}
                         description={prompt.description}

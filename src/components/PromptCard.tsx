@@ -1,9 +1,11 @@
-"use client"; // <--- THIS WAS MISSING! ADD THIS LINE.
+"use client";
 import Link from 'next/link';
 import styles from './PromptCard.module.scss';
 import { User } from 'lucide-react';
+import LikeButton from './LikeButton'; // <--- Import this
 
 interface PromptCardProps {
+  id?: number; // Added optional ID so we can pass it to LikeButton
   title: string;
   description: string;
   price: string;
@@ -11,7 +13,7 @@ interface PromptCardProps {
   author: string;
 }
 
-export default function PromptCard({ title, description, price, tool, author }: PromptCardProps) {
+export default function PromptCard({ id, title, description, price, tool, author }: PromptCardProps) {
   
   const isFree = price === "Free" || price === "$0.00";
 
@@ -30,7 +32,6 @@ export default function PromptCard({ title, description, price, tool, author }: 
       <p className={styles.description}>{description}</p>
       
       <div className={styles.footer}>
-        {/* MAKE THE AUTHOR CLICKABLE */}
         <div 
             className={styles.author} 
             onClick={(e) => {
@@ -42,6 +43,9 @@ export default function PromptCard({ title, description, price, tool, author }: 
           <User size={14} />
           <span style={{ textDecoration: 'underline' }}>@{author}</span>
         </div>
+
+        {/* --- LIKE BUTTON (Only show if we have an ID) --- */}
+        {id && <LikeButton promptId={id} />}
         
         <div className={styles.price} style={{ color: isFree ? '#00ff88' : 'var(--accent-cyan)' }}>
             {price}

@@ -98,7 +98,8 @@ export default function ExplorePage() {
                     // NOTE: Our PromptCard component has a hardcoded Link to /prompt/1.
                     // We need to fix that momentarily. For now, let's see the data.
                     <div key={prompt.id} onClick={() => window.location.href = `/prompt/${prompt.id}`}>
-                        <PromptCard 
+                        <PromptCard
+                            id={prompt.id} // <--- ADD THIS
                             tool={prompt.ai_model} 
                             title={prompt.title} 
                             description={prompt.description} 
