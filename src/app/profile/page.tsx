@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MapPin, Link as LinkIcon, Edit, Loader, Settings } from "lucide-react"; 
+// Added 'Plus' icon
+import { MapPin, Link as LinkIcon, Edit, Loader, Settings, Plus } from "lucide-react"; 
 import styles from "./page.module.scss";
 import PromptCard from "../../components/PromptCard";
 import { supabase } from "../../lib/supabaseClient";
@@ -11,42 +12,31 @@ export default function ProfilePage() {
   const router = useRouter();
   
   const [user, setUser] = useState<any>(null);
-  const [profileData, setProfileData] = useState<any>(null); // New state for Bio/Role
+  const [profileData, setProfileData] = useState<any>(null);
   const [prompts, setPrompts] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const getData = async () => {
-      // 1. Get Current Logged In User
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push('/auth');
-        return;
-      }
+      if (!user) { router.push('/auth'); return; }
       setUser(user);
 
-      // 2. Fetch Profile Details (Bio, Username, Role)
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
       
-      if (profile) {
-        setProfileData(profile);
-      }
+      if (profile) setProfileData(profile);
 
-      // 3. Fetch Prompts uploaded by this user
-      const { data: userPrompts, error } = await supabase
+      const { data: userPrompts } = await supabase
         .from('prompts')
         .select('*')
         .eq('author_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (userPrompts) {
-        setPrompts(userPrompts);
-      }
+      if (userPrompts) setPrompts(userPrompts);
       setLoading(false);
     };
 
@@ -64,49 +54,47 @@ export default function ProfilePage() {
   return (
     <main className={styles.container}>
       
-      {/* HEADER */}
       <section className={styles.header}>
         <div className={styles.avatar}>
-          {/* Use Username first letter, or Email first letter as fallback */}
           {profileData?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
         </div>
 
         <div className={styles.info}>
           <div className={styles.nameRow}>
-            {/* Display Real Username from DB */}
             <h1>{profileData?.username || "Unnamed Engineer"}</h1>
             
-            {/* Link to Onboarding to edit profile */}
-            <Link href="/onboarding" style={{ textDecoration: 'none' }}>
-                <button className={styles.editBtn} style={{ display: 'flex', alignItems: 'center' }}>
-                    <Settings size={14} style={{ marginRight: '5px' }}/> 
-                    Edit Profile
-                </button>
-            </Link>
+            <div style={{ display: 'flex', gap: '10px' }}>
+                {/* 1. EDIT PROFILE BUTTON */}
+                <Link href="/onboarding" style={{ textDecoration: 'none' }}>
+                    <button className={styles.editBtn} style={{ display: 'flex', alignItems: 'center' }}>
+                        <Settings size={14} style={{ marginRight: '5px' }}/> 
+                        Edit
+                    </button>
+                </Link>
+
+                {/* 2. NEW PROMPT BUTTON (Only for Engineers) */}
+                {profileData?.role === 'engineer' && (
+                    <Link href="/sell" style={{ textDecoration: 'none' }}>
+                        <button className={styles.editBtn} style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            borderColor: 'var(--accent-cyan)', 
+                            color: 'var(--accent-cyan)',
+                            background: 'rgba(0, 243, 255, 0.05)'
+                        }}>
+                            <Plus size={14} style={{ marginRight: '5px' }}/> 
+                            New Prompt
+                        </button>
+                    </Link>
+                )}
+            </div>
           </div>
 
           <div className={styles.bio}>
-            {/* Display Real Bio */}
-            {profileData?.bio ? (
-                <p>{profileData.bio}</p>
-            ) : (
-                <p style={{ color: '#666', fontStyle: 'italic' }}>
-                    No bio set yet. Click 'Edit Profile' to introduce yourself.
-                </p>
-            )}
+            {profileData?.bio ? <p>{profileData.bio}</p> : <p style={{ color: '#666', fontStyle: 'italic' }}>No bio set yet.</p>}
             
-            {/* Show Role Badge */}
             {profileData?.role && (
-                <span style={{ 
-                    fontSize: '0.75rem', 
-                    background: 'rgba(255,255,255,0.1)', 
-                    padding: '4px 8px', 
-                    borderRadius: '4px',
-                    marginTop: '10px',
-                    display: 'inline-block',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px'
-                }}>
+                <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px', marginTop: '10px', display: 'inline-block', textTransform: 'uppercase', letterSpacing: '1px' }}>
                     {profileData.role}
                 </span>
             )}
@@ -134,13 +122,11 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* TABS */}
       <div className={styles.tabs}>
         <button className={`${styles.tab} ${styles.active}`}>My Deployments</button>
         <button className={styles.tab}>Saved</button>
       </div>
 
-      {/* GRID */}
       <div className={styles.grid}>
         {prompts.length === 0 ? (
             <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
@@ -153,13 +139,12 @@ export default function ProfilePage() {
             </div>
         ) : (
             prompts.map((prompt: any) => (
-                // Wrap in div for click handling
                 <div key={prompt.id} onClick={() => window.location.href = `/prompt/${prompt.id}`}>
                     <PromptCard 
                         tool={prompt.ai_model || "AI Tool"}
                         title={prompt.title || "Untitled"}
                         description={prompt.description || "No description"}
-                        author={profileData?.username || "Me"} // Show current username
+                        author={profileData?.username || "Me"}
                         price={prompt.price || "Free"}
                     />
                 </div>
