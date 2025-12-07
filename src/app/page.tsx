@@ -1,74 +1,67 @@
-"use client"; // <--- THE FIX. Makes this page interactive.
-import { useEffect, useState } from "react";
-import Hero from "../components/Hero";
-import PromptCard from "../components/PromptCard";
-import { supabase } from "../lib/supabaseClient";
-import Link from "next/link"; // Use Link for smoother navigation
+"use client";
+import Link from "next/link";
+import { GraduationCap, Briefcase, Palette, Terminal, ArrowRight } from "lucide-react";
+import styles from "./page.module.scss";
 
 export default function Home() {
-  const [trendingPrompts, setTrendingPrompts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchTrending = async () => {
-      // Fetch 3 newest prompts for the homepage
-      const { data } = await supabase
-        .from('prompts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      if (data) {
-        setTrendingPrompts(data);
-      }
-      setLoading(false);
-    };
-
-    fetchTrending();
-  }, []);
-
   return (
-    <main>
-      <Hero />
+    <main className={styles.main}>
       
-      {/* Trending Section */}
-      <section style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      {/* HEADER */}
+      <h1 className={styles.headline}>Choose Your Path.</h1>
+      <p className={styles.sub}>
+        PromptVault is now specialized. Select your workspace to enter a tailored experience.
+      </p>
+
+      {/* THE SORTING GRID */}
+      <div className={styles.grid}>
         
-        {/* Section Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Fresh <span style={{ color: 'var(--accent-purple)' }}>Drops</span></h2>
-          <a href="/explore" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>View all &rarr;</a>
-        </div>
+        {/* 1. STUDENT */}
+        <Link href="/explore?category=Student" className={`${styles.card} ${styles.student}`}>
+          <div style={{ color: '#00f3ff' }}>
+            <GraduationCap size={40} />
+          </div>
+          <h2>The Academy <ArrowRight size={20}/></h2>
+          <p>
+            For Students & Researchers. Unlock essay helpers, thesis analyzers, and study planners.
+          </p>
+        </Link>
 
-        {/* The Grid of Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-          
-          {loading ? (
-             <p style={{ color: '#666' }}>Loading trending prompts...</p>
-          ) : trendingPrompts.length === 0 ? (
-             <p style={{ color: '#666' }}>No prompts yet. Be the first to upload!</p>
-          ) : (
-            trendingPrompts.map((prompt) => (
-                // We wrap the card in a Link. This is better than onClick.
-                <Link 
-                    key={prompt.id} 
-                    href={`/prompt/${prompt.id}`} 
-                    style={{ textDecoration: 'none' }}
-                >
-                    <PromptCard 
-                        id={prompt.id} // <--- ADD THIS
-                        tool={prompt.ai_model || "AI"}
-                        title={prompt.title}
-                        description={prompt.description}
-                        author={prompt.author_name || "Engineer"}
-                        price={prompt.price || "Free"}
-                    />
-                </Link>
-            ))
-          )}
+        {/* 2. BUSINESS */}
+        <Link href="/explore?category=Business" className={`${styles.card} ${styles.business}`}>
+          <div style={{ color: '#ffd700' }}>
+            <Briefcase size={40} />
+          </div>
+          <h2>The Boardroom <ArrowRight size={20}/></h2>
+          <p>
+            For Entrepreneurs & Managers. Marketing strategy, cold emails, and productivity systems.
+          </p>
+        </Link>
 
-        </div>
-      </section>
+        {/* 3. CREATIVE */}
+        <Link href="/explore?category=Creative" className={`${styles.card} ${styles.creative}`}>
+          <div style={{ color: '#ff0080' }}>
+            <Palette size={40} />
+          </div>
+          <h2>The Studio <ArrowRight size={20}/></h2>
+          <p>
+            For Artists & Designers. Midjourney styles, DALL-E prompts, and video generation scripts.
+          </p>
+        </Link>
+
+        {/* 4. DEVELOPER */}
+        <Link href="/explore?category=Developer" className={`${styles.card} ${styles.dev}`}>
+          <div style={{ color: '#00ff88' }}>
+            <Terminal size={40} />
+          </div>
+          <h2>Dev Terminal <ArrowRight size={20}/></h2>
+          <p>
+            For Coders & Automation Engineers. Code debugging, SQL queries, and system architecture.
+          </p>
+        </Link>
+
+      </div>
+
     </main>
   );
 }

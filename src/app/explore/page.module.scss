@@ -1,107 +1,131 @@
 .container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem;
-  display: grid;
-  grid-template-columns: 280px 1fr; /* Sidebar width | Content width */
-  gap: 3rem;
-  align-items: start;
-}
+  padding: 2rem 1rem;
+  min-height: 100vh;
+  transition: background 0.5s ease;
 
-/* Sidebar Styles */
-.sidebar {
-  position: sticky;
-  top: 100px; /* Sticks below navbar */
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 1.5rem;
-  height: fit-content;
-}
-
-.filterGroup {
-  margin-bottom: 2rem;
+  /* --- THEME DEFINITIONS --- */
   
-  h3 {
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    letter-spacing: 1px;
-    margin-bottom: 1rem;
-    font-family: var(--font-mono);
+  /* 1. STUDENT (Academic Blue & Calm) */
+  &.themeStudent {
+    --theme-primary: #3b82f6; /* Royal Blue */
+    --theme-glow: rgba(59, 130, 246, 0.3);
+    --theme-bg: #0f172a; /* Slate Blue Dark */
+    background: radial-gradient(circle at top, #1e293b 0%, #000 100%);
+  }
+
+  /* 2. BUSINESS (Gold & Premium) */
+  &.themeBusiness {
+    --theme-primary: #f59e0b; /* Amber/Gold */
+    --theme-glow: rgba(245, 158, 11, 0.2);
+    --theme-bg: #1c1917; /* Warm Dark Grey */
+    background: radial-gradient(circle at top, #292524 0%, #000 100%);
+  }
+
+  /* 3. CREATIVE (Pink & Vibrant) */
+  &.themeCreative {
+    --theme-primary: #ec4899; /* Hot Pink */
+    --theme-glow: rgba(236, 72, 153, 0.3);
+    --theme-bg: #1a0515; /* Deep Purple Dark */
+    background: radial-gradient(circle at top, #380828 0%, #000 100%);
+  }
+
+  /* 4. DEVELOPER (Default Hacker Green/Cyan) */
+  &.themeDev {
+    --theme-primary: var(--accent-cyan);
+    --theme-glow: rgba(0, 243, 255, 0.1);
+    background: black; /* Standard look */
   }
 }
 
-.checkboxLabel {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 0.8rem;
-  color: var(--text-main);
-  cursor: pointer;
-  font-size: 0.95rem;
+/* --- APPLYING THE VARIABLES --- */
 
-  &:hover {
-    color: var(--accent-cyan);
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: white;
+    /* The Text Glow matches the theme */
+    text-shadow: 0 0 20px var(--theme-glow); 
   }
 
-  input {
-    accent-color: var(--accent-cyan);
-    transform: scale(1.2);
+  .subtext {
+    color: #888;
+    font-size: 1.1rem;
   }
-}
-
-/* Main Content Area */
-.mainContent {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
 }
 
 .searchBar {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  
-  /* The input field itself */
+  max-width: 600px;
+  margin: 0 auto 3rem auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  /* The Border Glow matches the theme */
+  border-color: var(--theme-primary); 
+  box-shadow: 0 0 15px var(--theme-glow);
+
+  .searchIcon {
+    color: #888;
+    margin-right: 10px;
+  }
+
   input {
     background: transparent;
     border: none;
     color: white;
-    font-size: 1.1rem;
     width: 100%;
     outline: none;
-    font-family: var(--font-mono);
+    font-size: 1rem;
+  }
 
-    &::placeholder {
-      color: #555;
-    }
+  .filterBtn {
+    background: transparent;
+    border: none;
+    color: var(--theme-primary); /* Icon takes theme color */
+    cursor: pointer;
   }
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* --- MOBILE PATCH --- */
+.emptyState {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem;
+  color: #666;
+  border: 1px dashed rgba(255,255,255,0.1);
+  border-radius: 12px;
+}
+
+/* Mobile Patch */
 @media (max-width: 768px) {
-  .container {
-    grid-template-columns: 1fr; /* Stack into 1 column */
-    padding: 1rem;
-    gap: 1.5rem;
-  }
+  .header h1 { font-size: 2rem; }
+  .grid { grid-template-columns: 1fr; }
+}
+.layoutSplit {
+  /* Default is grid defined inline */
+}
 
-  .sidebar {
-    display: none; /* Hide filters on mobile for simplicity */
+@media (max-width: 900px) {
+  .layoutSplit {
+    grid-template-columns: 1fr !important; /* Force single column */
   }
-
-  .grid {
-    grid-template-columns: 1fr; /* Force cards to be full width */
+  
+  .sidebarRight {
+    order: -1; /* Move Leaderboard to TOP on mobile? Or remove this line to keep at bottom */
+    margin-bottom: 2rem;
   }
 }

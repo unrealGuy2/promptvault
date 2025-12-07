@@ -1,118 +1,139 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Search, Filter, Loader } from "lucide-react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Search, SlidersHorizontal, Loader } from "lucide-react";
 import styles from "./page.module.scss";
-import PromptCard from "../../components/PromptCard"; // Go up 2 levels
-import { supabase } from "../../lib/supabaseClient"; // Go up 2 levels
+import PromptCard from "../../components/PromptCard";
+import { supabase } from "../../lib/supabaseClient";
+// Import the new Leaderboard Component
+import Leaderboard from "../../components/Leaderboard";
 
-export default function ExplorePage() {
+function ExploreFeed() {
+  const searchParams = useSearchParams();
+  const category = searchParams.get('category'); 
+
   const [prompts, setPrompts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    fetchPrompts();
-  }, []);
-
-  const fetchPrompts = async () => {
-    setLoading(true);
-    // Fetch ALL prompts from the database, newest first
-    const { data, error } = await supabase
-      .from('prompts')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (data) {
-      setPrompts(data);
+  // 1. Define the Theme Class based on Category
+  const getThemeClass = () => {
+    switch (category) {
+      case "Student": return styles.themeStudent;
+      case "Business": return styles.themeBusiness;
+      case "Creative": return styles.themeCreative;
+      default: return styles.themeDev; // Default/Developer
     }
-    setLoading(false);
   };
 
-  // Simple Search Filter logic
-  const filteredPrompts = prompts.filter(prompt => 
-    prompt.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    prompt.ai_model.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const getHeader = () => {
+    switch (category) {
+      case "Student": return "The Academy 🎓";
+      case "Business": return "The Boardroom 💼";
+      case "Creative": return "The Studio 🎨";
+      case "Developer": return "Dev Terminal 💻";
+      default: return "Explore All";
+    }
+  };
+
+  useEffect(() => {
+    const fetchPrompts = async () => {
+      setLoading(true);
+      let query = supabase.from('prompts').select('*').order('created_at', { ascending: false });
+
+      if (category) query = query.eq('category', category);
+      if (searchTerm) query = query.ilike('title', `%${searchTerm}%`);
+
+      const { data } = await query;
+      if (data) setPrompts(data);
+      setLoading(false);
+    };
+
+    fetchPrompts();
+  }, [category, searchTerm]);
 
   return (
-    <main className={styles.container}>
+    // Apply Dynamic Theme Class
+    <div className={`${styles.container} ${getThemeClass()}`}>
       
-      {/* LEFT SIDEBAR: Filters (Visual Only for now) */}
-      <aside className={styles.sidebar}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2rem', color: 'var(--accent-purple)' }}>
-            <Filter size={20} />
-            <span style={{ fontWeight: 'bold' }}>Filters</span>
-        </div>
+      {/* HEADER */}
+      <header className={styles.header}>
+        <h1>{getHeader()}</h1>
+        <p className={styles.subtext}>
+            {category ? `Welcome to the ${category} workspace.` : "Discover prompts from all sectors."}
+        </p>
+      </header>
 
-        <div className={styles.filterGroup}>
-          <h3>Price</h3>
-          <label className={styles.checkboxLabel}>
-            <input type="checkbox" /> Free Only
-          </label>
-          <label className={styles.checkboxLabel}>
-            <input type="checkbox" /> Under $5
-          </label>
-        </div>
+      {/* SEARCH BAR */}
+      <div className={styles.searchBar}>
+        <Search className={styles.searchIcon} />
+        <input 
+          type="text" 
+          placeholder={`Search ${category || "all"}...`}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <button className={styles.filterBtn}>
+          <SlidersHorizontal size={18} />
+        </button>
+      </div>
 
-        <div className={styles.filterGroup}>
-          <h3>AI Model</h3>
-          <label className={styles.checkboxLabel}>
-            <input type="checkbox" /> GPT-4
-          </label>
-          <label className={styles.checkboxLabel}>
-            <input type="checkbox" /> Midjourney
-          </label>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <section className={styles.mainContent}>
+      {/* MAIN LAYOUT SPLIT (Left: Feed, Right: Leaderboard) */}
+      <div className={styles.layoutSplit} style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 300px', 
+          gap: '2rem', 
+          maxWidth: '1200px', 
+          margin: '0 auto' 
+      }}>
         
-        {/* Search Bar - NOW FUNCTIONAL */}
-        <div className={styles.searchBar}>
-            <Search color="var(--text-muted)" />
-            <input 
-                type="text" 
-                placeholder="Search for prompts..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
-
-        {/* Results Grid */}
-        <div className={styles.grid}>
-            
+        {/* LEFT COLUMN: THE FEED */}
+        <div>
             {loading ? (
-                <div style={{ color: 'white', display: 'flex', gap: '10px' }}>
-                    <Loader className="animate-spin"/> Loading Marketplace...
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+                    <Loader className="animate-spin" />
                 </div>
-            ) : filteredPrompts.length === 0 ? (
-                <p style={{ color: '#888' }}>No prompts found matching "{searchTerm}"</p>
             ) : (
-                filteredPrompts.map((prompt) => (
-                    // We wrap the ID in a Link inside the PromptCard component, 
-                    // but PromptCard expects specific props.
-                    // We need to pass the ID to the card if we want to make the link work perfectly,
-                    // OR we modify PromptCard to accept an ID. 
-                    // For now, let's just render the card.
-                    // NOTE: Our PromptCard component has a hardcoded Link to /prompt/1.
-                    // We need to fix that momentarily. For now, let's see the data.
-                    <div key={prompt.id} onClick={() => window.location.href = `/prompt/${prompt.id}`}>
-                        <PromptCard
-                            id={prompt.id} // <--- ADD THIS
-                            tool={prompt.ai_model} 
-                            title={prompt.title} 
-                            description={prompt.description} 
-                            author={prompt.author_name || "Engineer"} 
-                            price={prompt.price} 
-                        />
+                <div className={styles.grid}>
+                {prompts.length === 0 ? (
+                    <div className={styles.emptyState}>
+                        <h3>No prompts here yet.</h3>
+                        <p>Be the first to upload to the {category} section!</p>
                     </div>
-                ))
+                ) : (
+                    prompts.map((prompt) => (
+                        <div key={prompt.id} onClick={() => window.location.href = `/prompt/${prompt.id}`}>
+                            <PromptCard 
+                                id={prompt.id}
+                                tool={prompt.ai_model || "AI"}
+                                title={prompt.title}
+                                description={prompt.description}
+                                author={prompt.author_name || "Engineer"}
+                                price={prompt.price || "Free"}
+                            />
+                        </div>
+                    ))
+                )}
+                </div>
             )}
-            
         </div>
-      </section>
 
+        {/* RIGHT COLUMN: LEADERBOARD */}
+        <aside className={styles.sidebarRight}>
+            <Leaderboard />
+        </aside>
+
+      </div>
+    </div>
+  );
+}
+
+export default function Explore() {
+  return (
+    <main style={{ minHeight: '100vh' }}>
+        <Suspense fallback={<div style={{color:'white', padding:'2rem'}}>Loading Vault...</div>}>
+            <ExploreFeed />
+        </Suspense>
     </main>
   );
 }

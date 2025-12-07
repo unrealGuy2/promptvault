@@ -2,50 +2,48 @@
 import { useState, useEffect } from "react";
 import { PaystackButton } from "react-paystack";
 import { supabase } from "../lib/supabaseClient";
-import { ShoppingCart, Check } from "lucide-react";
+import { Check, ShoppingCart, Loader } from "lucide-react";
 
 interface BuyButtonProps {
   promptId: number;
-  price: number; // Price in NAIRA (e.g. 5000 for 5k)
+  price: number; 
   title: string;
 }
 
 export default function BuyButton({ promptId, price, title }: BuyButtonProps) {
   const [user, setUser] = useState<any>(null);
   const [hasPurchased, setHasPurchased] = useState(false);
+  const [loading, setLoading] = useState(true);
   
-  // Paystack Config
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_KEY || "";
-  
-  // Paystack expects amount in Kobo (Naira * 100)
-  // If price is 500 Naira, amount should be 50000
-  const amount = price * 100; 
+  const amount = price * 100; // Paystack works in Kobo
 
   useEffect(() => {
+    const checkUserAndPurchase = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+
+      if (user) {
+        // Check if already bought
+        const { data } = await supabase
+          .from('purchases')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('prompt_id', promptId)
+          .single();
+        
+        if (data) setHasPurchased(true);
+      }
+      setLoading(false);
+    };
+
     checkUserAndPurchase();
   }, [promptId]);
 
-  const checkUserAndPurchase = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-
-    if (user) {
-      // Check if already bought
-      const { data } = await supabase
-        .from('purchases')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('prompt_id', promptId)
-        .single();
-      
-      if (data) setHasPurchased(true);
-    }
-  };
-
   const handleSuccess = async (reference: any) => {
-    // Payment Successful! Save to DB.
     if (!user) return;
 
+    // 1. Record Purchase
     const { error } = await supabase.from('purchases').insert({
       user_id: user.id,
       prompt_id: promptId,
@@ -56,7 +54,27 @@ export default function BuyButton({ promptId, price, title }: BuyButtonProps) {
     if (!error) {
       setHasPurchased(true);
       alert("Payment Successful! Prompt Unlocked.");
-      window.location.reload(); // Reload page to unblur content
+
+      // 2. --- SEND SALES NOTIFICATION ---
+      // Fetch the Seller (Prompt Author)
+      const { data: prompt } = await supabase
+        .from('prompts')
+        .select('author_id, title')
+        .eq('id', promptId)
+        .single();
+      
+      if (prompt) {
+          await supabase.from('notifications').insert({
+            user_id: prompt.author_id, // Seller
+            actor_id: user.id, // Buyer (Me)
+            type: 'sale',
+            message: `purchased your prompt "${prompt.title}" for ₦${price}!`,
+            link: `/prompt/${promptId}`
+          });
+      }
+
+      // Reload to unblur content
+      window.location.reload(); 
     }
   };
 
@@ -76,6 +94,8 @@ export default function BuyButton({ promptId, price, title }: BuyButtonProps) {
     onSuccess: handleSuccess,
     onClose: handleClose,
   };
+
+  if (loading) return <div style={{ padding:'15px', textAlign:'center', color:'#666' }}>Checking...</div>;
 
   if (hasPurchased) {
     return (
@@ -97,12 +117,12 @@ export default function BuyButton({ promptId, price, title }: BuyButtonProps) {
           gap: '10px'
         }}
       >
-        <Check size={20} /> Owned
+        <Check size={20} /> Owned / Unlocked
       </button>
     );
   }
 
-  // Only render Paystack button if user is logged in, else show Login button
+  // If not logged in, redirect to login
   if (!user) {
     return (
         <a href="/auth" style={{ textDecoration: 'none' }}>
@@ -124,10 +144,7 @@ export default function BuyButton({ promptId, price, title }: BuyButtonProps) {
   }
 
   return (
-    // @ts-ignore (Ignore TypeScript warning for Paystack button types)
-    <PaystackButton 
-        {...componentProps} 
-        className="paystack-btn" 
-    />
+    // @ts-ignore
+    <PaystackButton {...componentProps} className="paystack-btn" />
   );
 }

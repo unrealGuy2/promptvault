@@ -1,28 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MapPin, Link as LinkIcon, UserPlus, Loader, AlertCircle } from "lucide-react"; 
+import { MapPin, ShieldCheck, Trophy, Zap, AlertCircle, Loader } from "lucide-react"; 
 import styles from "./page.module.scss";
-import PromptCard from "../../../components/PromptCard"; // Go up 3 levels
+import PromptCard from "../../../components/PromptCard"; 
+import FollowButton from "../../../components/FollowButton"; // <--- NEW
 import { supabase } from "../../../lib/supabaseClient";
 import { useParams } from "next/navigation";
 
 export default function PublicProfile() {
   const params = useParams();
-  // The username from the URL (e.g., "HunterX4")
-  // We need to decode it because URLs change spaces to %20
   const rawUsername = params.username as string;
   const username = decodeURIComponent(rawUsername);
 
   const [profile, setProfile] = useState<any>(null);
   const [prompts, setPrompts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [followerCount, setFollowerCount] = useState(0);
 
   useEffect(() => {
     const getPublicData = async () => {
       setLoading(true);
 
-      // 1. Find the User by their Username
-      const { data: profileData, error } = await supabase
+      // 1. Find User
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('username', username)
@@ -30,46 +30,48 @@ export default function PublicProfile() {
 
       if (!profileData) {
         setLoading(false);
-        return; // User not found
+        return;
       }
 
       setProfile(profileData);
 
-      // 2. Fetch Prompts by this User's ID
+      // 2. Fetch Prompts
       const { data: userPrompts } = await supabase
         .from('prompts')
         .select('*')
-        .eq('author_id', profileData.id) // Use the ID we just found
+        .eq('author_id', profileData.id)
         .order('created_at', { ascending: false });
 
-      if (userPrompts) {
-        setPrompts(userPrompts);
-      }
+      if (userPrompts) setPrompts(userPrompts);
+
+      // 3. Count Followers
+      const { count } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', profileData.id);
+      
+      setFollowerCount(count || 0);
       setLoading(false);
     };
 
-    if (username) {
-        getPublicData();
-    }
+    if (username) getPublicData();
   }, [username]);
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '100px', color: 'white' }}>
-        <Loader className="animate-spin" />
-      </div>
-    );
-  }
+  // Helper to render Badge Icons
+  const renderBadge = (badge: string) => {
+    switch(badge) {
+        case 'verified': 
+            return <span title="Verified Creator" style={{color:'#00f3ff'}}><ShieldCheck size={18} fill="rgba(0,243,255,0.2)" /></span>;
+        case 'top-1%': 
+            return <span title="Top 1% Seller" style={{color:'#ffd700'}}><Trophy size={18} fill="rgba(255,215,0,0.2)" /></span>;
+        case 'automation-king': 
+            return <span title="Automation Challenge Winner" style={{color:'#ff0080'}}><Zap size={18} fill="rgba(255,0,128,0.2)" /></span>;
+        default: return null;
+    }
+  };
 
-  if (!profile) {
-    return (
-        <div style={{ textAlign: 'center', marginTop: '100px', color: '#ff4444' }}>
-            <AlertCircle size={40} style={{ margin: '0 auto', display: 'block', marginBottom: '10px' }}/>
-            <h2>User Not Found</h2>
-            <p>The user "@{username}" does not exist.</p>
-        </div>
-    );
-  }
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', marginTop: '100px', color: 'white' }}><Loader className="animate-spin" /></div>;
+  if (!profile) return <div style={{ textAlign: 'center', marginTop: '100px', color: '#ff4444' }}>User Not Found</div>;
 
   return (
     <main className={styles.container}>
@@ -84,59 +86,40 @@ export default function PublicProfile() {
           <div className={styles.nameRow}>
             <h1>{profile.username}</h1>
             
-            {/* FOLLOW BUTTON (Visual only for now) */}
-            <button className={styles.editBtn}>
-                <UserPlus size={14} style={{ marginRight: '5px' }}/> 
-                Follow
-            </button>
+            {/* BADGES ROW */}
+            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                {profile.badges && profile.badges.map((b: string) => renderBadge(b))}
+            </div>
+
+            {/* FOLLOW BUTTON */}
+            <div style={{ marginLeft: '1rem' }}>
+                <FollowButton targetUserId={profile.id} />
+            </div>
           </div>
 
-          <p className={styles.bio}>
-            {profile.bio || "No bio set."}
-          </p>
+          <p className={styles.bio}>{profile.bio || "No bio set."}</p>
           
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', fontSize: '0.9rem', color: '#888' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><MapPin size={14}/> Earth</span>
-          </div>
-
           <div className={styles.stats}>
-            <div>
-              <span>{prompts.length}</span>
-              <span>Prompts</span>
-            </div>
-            <div>
-              <span>0</span>
-              <span>Followers</span>
-            </div>
+            <div><span>{prompts.length}</span><span>Prompts</span></div>
+            <div><span>{followerCount}</span><span>Followers</span></div>
           </div>
         </div>
       </section>
 
-      <div className={styles.tabs}>
-        <button className={`${styles.tab} ${styles.active}`}>Deployments</button>
-      </div>
-
       <div className={styles.grid}>
-        {prompts.length === 0 ? (
-            <div style={{ color: '#666', gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
-                This user hasn't deployed any prompts yet.
+        {prompts.map((prompt: any) => (
+            <div key={prompt.id} onClick={() => window.location.href = `/prompt/${prompt.id}`}>
+                <PromptCard 
+                    id={prompt.id}
+                    tool={prompt.ai_model || "AI"}
+                    title={prompt.title}
+                    description={prompt.description}
+                    author={profile.username}
+                    price={prompt.price || "Free"}
+                />
             </div>
-        ) : (
-            prompts.map((prompt: any) => (
-                <div key={prompt.id} onClick={() => window.location.href = `/prompt/${prompt.id}`}>
-                    <PromptCard 
-                        id={prompt.id} // <--- ADD THIS
-                        tool={prompt.ai_model || "AI Tool"}
-                        title={prompt.title || "Untitled"}
-                        description={prompt.description || "No description"}
-                        author={profile.username}
-                        price={prompt.price || "Free"}
-                    />
-                </div>
-            ))
-        )}
+        ))}
       </div>
-
     </main>
   );
 }

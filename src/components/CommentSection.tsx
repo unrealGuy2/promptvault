@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { MessageSquare, Send } from "lucide-react";
-import Link from "next/link";
 
 interface CommentSectionProps {
   promptId: number;
@@ -12,25 +11,20 @@ export default function CommentSection({ promptId }: CommentSectionProps) {
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
 
-  // Load comments & check user
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Get current user
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
 
-      // 2. Fetch comments + Author details
-      // We join the 'profiles' table to get the username of the commenter
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('comments')
         .select(`
           id,
           created_at,
           content,
           user_id,
-          profiles ( username, avatar_url )
+          profiles ( username )
         `)
         .eq('prompt_id', promptId)
         .order('created_at', { ascending: false });
@@ -43,9 +37,8 @@ export default function CommentSection({ promptId }: CommentSectionProps) {
 
   const handlePostComment = async () => {
     if (!newComment.trim() || !user) return;
-    setLoading(true);
 
-    // Insert into DB
+    // 1. Insert the Comment
     const { error } = await supabase
       .from('comments')
       .insert({
@@ -56,10 +49,29 @@ export default function CommentSection({ promptId }: CommentSectionProps) {
 
     if (!error) {
       setNewComment("");
-      // Refresh the list immediately manually to feel fast
+      
+      // 2. --- NOTIFICATION LOGIC ---
+      // Fetch Prompt Owner first
+      const { data: prompt } = await supabase
+        .from('prompts')
+        .select('author_id, title')
+        .eq('id', promptId)
+        .single();
+
+      // Only notify if we are NOT the owner commenting on our own post
+      if (prompt && prompt.author_id !== user.id) {
+          await supabase.from('notifications').insert({
+              user_id: prompt.author_id, // The Owner gets the alert
+              actor_id: user.id, // Me (The Commenter)
+              type: 'comment',
+              message: `commented on ${prompt.title}: "${newComment.substring(0, 20)}..."`,
+              link: `/prompt/${promptId}`
+          });
+      }
+      
+      // Refresh page to see new comment
       window.location.reload(); 
     }
-    setLoading(false);
   };
 
   return (
@@ -90,7 +102,6 @@ export default function CommentSection({ promptId }: CommentSectionProps) {
           />
           <button 
             onClick={handlePostComment}
-            disabled={loading}
             style={{
               background: 'var(--accent-purple)',
               border: 'none',
@@ -104,35 +115,26 @@ export default function CommentSection({ promptId }: CommentSectionProps) {
           </button>
         </div>
       ) : (
-        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '2rem', textAlign: 'center' }}>
-            <p style={{ color: '#888', marginBottom: '0.5rem' }}>Login to join the discussion.</p>
-            <Link href="/auth">
-                <button style={{ background: 'transparent', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>
-                    Sign In
-                </button>
-            </Link>
-        </div>
+        <p style={{ color: '#888', marginBottom: '2rem', fontStyle: 'italic' }}>
+            Login to join the discussion.
+        </p>
       )}
 
       {/* List of Comments */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        {comments.length === 0 ? (
-            <p style={{ color: '#666', fontStyle: 'italic' }}>No comments yet. Be the first!</p>
-        ) : (
-            comments.map((comment) => (
-                <div key={comment.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <span style={{ fontWeight: 'bold', color: 'var(--accent-cyan)', fontSize: '0.9rem' }}>
-                            @{comment.profiles?.username || "User"}
-                        </span>
-                        <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                            {new Date(comment.created_at).toLocaleDateString()}
-                        </span>
-                    </div>
-                    <p style={{ color: '#ccc', lineHeight: '1.5' }}>{comment.content}</p>
+        {comments.map((comment) => (
+            <div key={comment.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 'bold', color: 'var(--accent-cyan)' }}>
+                        @{comment.profiles?.username || "User"}
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                        {new Date(comment.created_at).toLocaleDateString()}
+                    </span>
                 </div>
-            ))
-        )}
+                <p style={{ color: '#ccc', lineHeight: '1.5' }}>{comment.content}</p>
+            </div>
+        ))}
       </div>
 
     </div>
