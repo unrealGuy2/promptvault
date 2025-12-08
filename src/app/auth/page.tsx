@@ -1,140 +1,118 @@
 "use client";
+
 import { useState } from "react";
-import { Github } from "lucide-react";
-import styles from "./page.module.scss";
-import { supabase } from "../../lib/supabaseClient"; // Import the connection
+import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
+import { Loader2, Github } from "lucide-react";
+import Link from "next/link";
+// IMPORTING THE CORRECT EXISTING FILE
+import styles from "./page.module.scss"; 
 
 export default function AuthPage() {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const router = useRouter();
-  const [isLogin, setIsLogin] = useState(true);
-  
-  // Form States
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState(""); // Only used for signup
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
-  // 1. Handle Sign Up
-  const handleSignUp = async () => {
-    setLoading(true);
-    setError(null);
-    
-    // Create user in Supabase Auth
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
+  async function handleSignIn() {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      
+      router.push("/settings");
+      router.refresh();
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGithubLogin() {
+    await supabase.auth.signInWithOAuth({
+      provider: 'github',
       options: {
-        data: { username: username }, // Save username as metadata
+        redirectTo: `${location.origin}/auth/callback`,
       },
     });
-
-    if (authError) {
-      setError(authError.message);
-    } else {
-      setMessage("Success! Check your email to confirm your account.");
-    }
-    setLoading(false);
-  };
-
-  // 2. Handle Login
-  const handleLogin = async () => {
-    setLoading(true);
-    setError(null);
-
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-    } else {
-      // Login successful -> Go to Profile
-      router.push("/profile");
-      router.refresh(); // Refresh to update Navbar state later
-    }
-  };
-
-  // Decide which function to call
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Stop page reload
-    if (isLogin) {
-      handleLogin();
-    } else {
-      handleSignUp();
-    }
-  };
+  }
 
   return (
-    <main className={styles.container}>
-      <div className={styles.authCard}>
+    <div className={styles.container}>
+      <div className={styles.card}>
         
-        <h1 className={styles.title}>
-          {isLogin ? "Welcome Back" : "Join the Vault"}
-        </h1>
-        <p className={styles.subtitle}>
-          {isLogin 
-            ? "Enter your credentials to access your terminal." 
-            : "Create an account to start selling and buying prompts."}
-        </p>
+        {/* Header */}
+        <div className={styles.header}>
+          <h1>Welcome Back</h1>
+          <p>Enter your credentials to access your terminal.</p>
+        </div>
 
-        {/* Error / Success Messages */}
-        {error && <div style={{ color: '#ff4444', marginBottom: '1rem', background: 'rgba(255,0,0,0.1)', padding: '10px', borderRadius: '5px' }}>{error}</div>}
-        {message && <div style={{ color: '#00ff88', marginBottom: '1rem', background: 'rgba(0,255,0,0.1)', padding: '10px', borderRadius: '5px' }}>{message}</div>}
-
-        <form onSubmit={handleSubmit}>
+        {/* Form Container */}
+        <div className={styles.form}>
+          
+          {/* Email Input */}
           <div className={styles.inputGroup}>
-            {!isLogin && (
-                <input 
-                  type="text" 
-                  placeholder="Username" 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required={!isLogin}
-                />
-            )}
-            <input 
-              type="email" 
-              placeholder="Email Address" 
+             <label>Email Address</label>
+            <input
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input 
-              type="password" 
-              placeholder="Password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              placeholder="name@example.com"
             />
           </div>
 
-          <button type="submit" className={styles.submitBtn} disabled={loading}>
-            {loading ? "Processing..." : (isLogin ? "Sign In" : "Create Account")}
-          </button>
-        </form>
+          {/* Password Input */}
+          <div className={styles.inputGroup}>
+            <label>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
 
-        <div className={styles.divider}>
-          <span>OR</span>
+          {/* Main Button */}
+          <button
+            onClick={handleSignIn}
+            disabled={loading}
+            className={styles.primaryButton}
+          >
+            {loading ? <Loader2 className="animate-spin" /> : "Sign In"}
+          </button>
+
+          {/* Divider */}
+          <div className={styles.divider}>
+            <span>Or</span>
+          </div>
+
+          {/* Github Button */}
+          <button
+            onClick={handleGithubLogin}
+            className={styles.githubButton}
+          >
+            <Github size={20} />
+            <span>Continue with GitHub</span>
+          </button>
         </div>
 
-        <button className={styles.socialBtn}>
-          <Github size={18} />
-          Continue with GitHub
-        </button>
-
-        <div className={styles.toggle}>
-          {isLogin ? "New to PromptVault?" : "Already have an account?"}
-          <button onClick={() => { setIsLogin(!isLogin); setError(null); setMessage(null); }} type="button">
-            {isLogin ? "Sign Up" : "Log In"}
-          </button>
+        {/* Footer */}
+        <div className={styles.footer}>
+          New to PromptVault?
+          <Link href="/signup">
+            Sign Up
+          </Link>
         </div>
-      
       </div>
-    </main>
+    </div>
   );
 }

@@ -70,3 +70,31 @@
     color: var(--accent-purple);
   }
 }
+/* ... existing code ... */
+
+/* ADD THIS TO THE BOTTOM */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 1rem; /* Reduce padding on phones to create space */
+  }
+
+  .navLinks {
+    gap: 1rem; /* Reduce gap between links */
+    display: flex !important; /* Force it to show */
+  }
+
+  .navLinks a {
+    font-size: 0.85rem; /* Make text slightly smaller */
+  }
+
+  /* Optional: Hide "Sell Prompts" on mobile to save space, 
+     since uploading usually happens on PC */
+  .navLinks a[href="/sell"] {
+    display: none;
+  }
+  
+  /* Optional: Hide the "Vault" text in the logo on very small screens */
+  .logo span {
+    display: none; 
+  }
+}
